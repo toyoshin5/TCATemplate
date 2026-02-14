@@ -45,12 +45,12 @@ public struct CounterView: View {
         .monospacedDigit()
 
       HStack(spacing: 12) {
-        Button("-1") {
+        Button("-") {
           store.send(.decrementButtonTapped)
         }
         .buttonStyle(.bordered)
 
-        Button("+1") {
+        Button("+") {
           store.send(.incrementButtonTapped)
         }
         .buttonStyle(.borderedProminent)

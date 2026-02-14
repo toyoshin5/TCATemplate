@@ -1,0 +1,6 @@
+.DS_Store
+
+App/TCATemplate.xcodeproj/
+App/.xcodegen/
+iOS/.build/
+**/DerivedData/

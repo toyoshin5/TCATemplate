@@ -4,3 +4,5 @@ App/TCATemplate.xcodeproj/
 App/.xcodegen/
 iOS/.build/
 **/DerivedData/
+**/xcuserdata/
+**/*.xcuserstate

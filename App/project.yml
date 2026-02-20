@@ -2,6 +2,10 @@ name: TCATemplate
 options:
   deploymentTarget:
     iOS: "18.0"
+  developmentLanguage: ja
+  fileTypes:
+    icon:
+      file: true # IconComposer
 settings:
   base:
     SWIFT_VERSION: 6.0

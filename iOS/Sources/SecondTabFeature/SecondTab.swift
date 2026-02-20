@@ -3,86 +3,102 @@ import SwiftUI
 
 @Reducer
 public struct SecondTabFeature {
-  @Reducer
-  public enum Path {
-    case b(BFeature)
-    case c(CFeature)
-    case d(DFeature)
-  }
+    @Reducer
+    public enum Destination {
+        case b(BFeature)
+    }
 
-  @ObservableState
-  public struct State: Equatable {
-    public var path = StackState<Path.State>()
+    @ObservableState
+    public struct State: Equatable {
+        public var count = 0
+        @Presents public var destination: Destination.State?
+
+        public init() {}
+    }
+
+    public enum Action: Equatable {
+        case view(ViewAction)
+        case destination(PresentationAction<Destination.Action>)
+
+        public enum ViewAction: Equatable {
+            case incrementButtonTapped
+            case goToBButtonTapped
+        }
+    }
 
     public init() {}
-  }
 
-  public enum Action: Equatable {
-    case goToBButtonTapped
-    case path(StackAction<Path.State, Path.Action>)
-  }
+    public var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            switch action {
+            case .view(.incrementButtonTapped):
+                state.count += 1
+                return .none
 
-  public init() {}
+            case .view(.goToBButtonTapped):
+                state.destination = .b(BFeature.State())
+                return .none
 
-  public var body: some ReducerOf<Self> {
-    Reduce { state, action in
-      switch action {
-      case .goToBButtonTapped:
-        state.path.append(.b(BFeature.State()))
-        return .none
-
-      case .path(.element(id: _, action: .b(.goToCButtonTapped))):
-        state.path.append(.c(CFeature.State()))
-        return .none
-
-      case .path(.element(id: _, action: .c(.goToDButtonTapped))):
-        state.path.append(.d(DFeature.State()))
-        return .none
-
-      case .path:
-        return .none
-      }
+            case .destination:
+                return .none
+            }
+        }
+        .ifLet(\.$destination, action: \.destination)
     }
-    .forEach(\.path, action: \.path)
-  }
 }
 
-extension SecondTabFeature.Path.State: Equatable {}
-extension SecondTabFeature.Path.Action: Equatable {}
+extension SecondTabFeature.Destination.Action: Equatable {}
+extension SecondTabFeature.Destination.State: Equatable {}
 
 public struct SecondTabView: View {
-  @Bindable var store: StoreOf<SecondTabFeature>
+    @Bindable var store: StoreOf<SecondTabFeature>
 
-  public init(store: StoreOf<SecondTabFeature>) {
-    self.store = store
-  }
-
-  public var body: some View {
-    NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
-      VStack(spacing: 16) {
-        Text("Second Tab")
-          .font(.title2.weight(.semibold))
-
-        Button {
-          store.send(.goToBButtonTapped)
-        } label: {
-          Label("Go to B", systemImage: "arrow.right.circle.fill")
-            .font(.body.weight(.semibold))
-        }
-        .buttonStyle(.borderedProminent)
-      }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .padding()
-      .navigationTitle("Navigate")
-    } destination: { store in
-      switch store.case {
-      case let .b(store):
-        BView(store: store)
-      case let .c(store):
-        CView(store: store)
-      case let .d(store):
-        DView(store: store)
-      }
+    public init(store: StoreOf<SecondTabFeature>) {
+        self.store = store
     }
-  }
+
+    public var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text("Second Tab")
+                    .font(.title2.weight(.semibold))
+
+                Text("Count: \(store.count)")
+                    .monospacedDigit()
+
+                Button("+1") {
+                    store.send(.view(.incrementButtonTapped))
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    store.send(.view(.goToBButtonTapped))
+                } label: {
+                    Label("Go to B", systemImage: "arrow.right.circle.fill")
+                        .font(.body.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding()
+            .navigationTitle("Navigate")
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.b, action: \.destination.b)
+        ) { rawBStore in
+            @Bindable var bStore = rawBStore
+            BView(store: bStore)
+                .navigationDestination(
+                    item: $bStore.scope(state: \.destination?.c, action: \.destination.c)
+                ) { rawCStore in
+                    @Bindable var cStore = rawCStore
+                    CView(store: cStore)
+                        .navigationDestination(
+                            item: $cStore.scope(state: \.destination?.d, action: \.destination.d)
+                        ) { dStore in
+                            DView(store: dStore)
+                        }
+                }
+        }
+    }
 }

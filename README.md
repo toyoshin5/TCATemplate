@@ -7,9 +7,10 @@ A minimal iOS-only template app using The Composable Architecture (TCA), modeled
 
 ## Features
 
-- Counter tab (`CounterFeature`)
-- Navigate tab (`SecondTabFeature`) with one detail screen transition
-- Reducer test example (`CounterFeatureTests`)
+- Counter tab (`CounterFeature`) with a `@DependencyClient` example (`NumberFactClient`)
+- Navigate tab (`SecondTabFeature`) with a B → C → D drill-down navigation example
+- Reducer tests for every feature (Swift Testing)
+- Architecture rules enforced by tests (`ArchitectureTests`, see below)
 
 ## Setup
 
@@ -27,3 +28,26 @@ xcodegen generate
 ```bash
 swift test --package-path iOS
 ```
+
+## アーキテクチャルール(Harmonize + SwiftLint)
+
+このテンプレートにはアーキテクチャルールの静的検査が最初から組み込まれている。
+**このテンプレートから作るアプリはbaseline空(=既知違反ゼロ)で始まる。空のまま保つこと。**
+
+| 層 | ツール | 実行 |
+|---|---|---|
+| アーキテクチャ(構造・配置・存在) | Harmonize: `TCAArchRules/` + `iOS/Tests/ArchitectureTests/` | `swift test --package-path iOS --filter ArchitectureTests` |
+| 構文・衛生(print禁止、生Task禁止等) | SwiftLint: `.swiftlint.yml` | `swiftlint lint --quiet --lenient` |
+
+主なルール(詳細と意図は `docs/architecture-rules.md`):
+
+- `@Reducer` は `*Feature` 命名、1ファイル1Reducer、ReducerとViewは別ファイル
+- Actionは `view` / `internal` / `delegate` / `binding` / 子Reducer接続に構造化(`@CasePathable` + `ViewAction` 準拠、View側は `@ViewAction(for:)`)
+- Stateは `@ObservableState` + `Equatable`
+- presentationは `@Reducer enum Destination` に集約(裸の `@Presents` 禁止)
+- Clientは `*Client` 命名で `liveValue`/`testValue`/`previewValue` を明示、TCA本体をimportしない
+- Singleton(`.shared`)/`*Manager` の直接参照禁止(すべて `@Dependency` 経由)
+- `Store(initialState:)` の生成は `AppRootView`(composition root)と `#Preview` のみ
+- 全Reducerに `<Reducer名>Tests` スイート必須
+
+違反はテスト失敗になる。**baselineに追加して黙らせるのではなく、コードを直すこと。**

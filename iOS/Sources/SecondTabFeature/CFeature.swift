@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import SwiftUI
 
 @Reducer
 public struct CFeature {
@@ -16,11 +15,12 @@ public struct CFeature {
         public init() {}
     }
 
-    public enum Action: Equatable {
-        case view(ViewAction)
+    public enum Action: ViewAction {
+        case view(View)
         case destination(PresentationAction<Destination.Action>)
 
-        public enum ViewAction: Equatable {
+        @CasePathable
+        public enum View {
             case incrementButtonTapped
             case goToDButtonTapped
         }
@@ -47,31 +47,5 @@ public struct CFeature {
     }
 }
 
-extension CFeature.Destination.Action: Equatable {}
+// @Reducer enumが生成するStateはEquatableを自動導出しないため明示的に付与する
 extension CFeature.Destination.State: Equatable {}
-
-public struct CView: View {
-    @Bindable var store: StoreOf<CFeature>
-
-    public init(store: StoreOf<CFeature>) {
-        self.store = store
-    }
-
-    public var body: some View {
-        VStack(spacing: 16) {
-            Text("Count: \(store.count)")
-                .monospacedDigit()
-
-            Button("+1") {
-                store.send(.view(.incrementButtonTapped))
-            }
-            .buttonStyle(.bordered)
-
-            Button("Go to D") {
-                store.send(.view(.goToDButtonTapped))
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .navigationTitle("C")
-    }
-}

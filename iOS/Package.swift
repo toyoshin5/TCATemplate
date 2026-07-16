@@ -8,11 +8,15 @@ let package = Package(
     products: [
         .library(name: "AppFeature", targets: ["AppFeature"]),
         .library(name: "CounterFeature", targets: ["CounterFeature"]),
-        .library(name: "SecondTabFeature", targets: ["SecondTabFeature"]),
+        .library(name: "SecondTabFeature", targets: ["SecondTabFeature"])
     ],
     dependencies: [
         .package(
-            url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.21.0")
+            url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.26.0"),
+        // Client層が依存してよいのはDependencies/DependenciesMacrosまで(TCA本体は禁止)
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.14.0"),
+        // アーキテクチャルール(Harmonizeベース)。ArchitectureTestsターゲットからのみ利用する
+        .package(path: "../TCAArchRules")
     ],
     targets: [
         .target(
@@ -20,13 +24,21 @@ let package = Package(
             dependencies: [
                 "CounterFeature",
                 "SecondTabFeature",
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
             ]
         ),
         .target(
             name: "CounterFeature",
             dependencies: [
+                "NumberFactClient",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+            ]
+        ),
+        .target(
+            name: "NumberFactClient",
+            dependencies: [
+                .product(name: "Dependencies", package: "swift-dependencies"),
+                .product(name: "DependenciesMacros", package: "swift-dependencies")
             ]
         ),
         .target(
@@ -36,11 +48,32 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "AppFeatureTests",
+            dependencies: [
+                "AppFeature",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+            ]
+        ),
+        .testTarget(
             name: "CounterFeatureTests",
             dependencies: [
                 "CounterFeature",
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                "NumberFactClient",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
             ]
         ),
+        .testTarget(
+            name: "SecondTabFeatureTests",
+            dependencies: [
+                "SecondTabFeature",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+            ]
+        ),
+        .testTarget(
+            name: "ArchitectureTests",
+            dependencies: [
+                .product(name: "TCAArchRules", package: "TCAArchRules")
+            ]
+        )
     ]
 )

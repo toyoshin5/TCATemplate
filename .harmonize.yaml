@@ -1,0 +1,8 @@
+# Harmonize(アーキテクチャリンター)の設定
+# https://github.com/perrystreetsoftware/Harmonize
+# ここで除外したパスはHarmonizeの全スコープから外れる。
+# ルール自体はiOS/Tests/ArchitectureTests/ArchitectureTests.swiftとTCAArchRulesパッケージにある。
+excludes:
+  - TCAArchRules
+  - .build
+  - DerivedData

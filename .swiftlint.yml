@@ -1,0 +1,133 @@
+# SwiftLint設定
+#
+# 運用方針:
+# - prebuildで `swiftlint --fix` → `swiftlint lint --lenient` を実行(ビルドは落とさない)想定
+# - ここには「書いた瞬間に気づきたい違反」を置く。構造的なアーキテクチャルールは
+#   Harmonize(iOS/Tests/ArchitectureTests/ArchitectureTests.swift + TCAArchRulesパッケージ)が担当。
+#   同じ意図のルールを両方に書かないこと(分担表: docs/architecture-rules.md)
+
+excluded:
+  - .build
+  - iOS/.build
+  - DerivedData
+  - TCAArchRules
+  - App/TCATemplate.xcodeproj
+
+# --- ビルトイン(デフォルト)ルールの調整 ---
+
+# TCAのState/Action/Destinationは深いネストが正規の形
+nesting:
+  type_level: 3
+
+line_length:
+  warning: 140
+  error: 220
+
+# サイズ系ルールの閾値:
+# デフォルト閾値(400/250/50)では大型のReducer・テストスイートで不自然な分割を強いるため、
+# 自然な継ぎ目での分割を前提に、妥当な大きさのファイルを許容する値に引き上げてある。
+# これを超えたら分割を検討すること。
+file_length:
+  warning: 1000
+
+type_body_length:
+  warning: 500
+  error: 800
+
+function_body_length:
+  warning: 100
+  error: 200
+
+identifier_name:
+  min_length:
+    warning: 1 # i, x等の短い名前は許容(命名の質はレビューで判断)。casing検査は維持
+
+# --- opt-in(実害のあるものを厳選) ---
+
+opt_in_rules:
+  - array_init
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - empty_count
+  - empty_string
+  - fatal_error_message
+  - first_where
+  - flatmap_over_map_reduce
+  - force_unwrapping
+  - identical_operands
+  - implicitly_unwrapped_optional
+  - joined_default_parameter
+  - last_where
+  - legacy_multiple
+  - prefer_zero_over_explicit_init
+  - redundant_nil_coalescing
+  - reduce_into
+  - shorthand_optional_binding
+  - sorted_first_last
+  - toggle_bool
+  - unhandled_throwing_task
+  - unowned_variable_capture
+  - weak_delegate
+
+# --- カスタムルール(衛生系。regexで安定して書けるもの) ---
+
+custom_rules:
+  no_print:
+    name: "print禁止"
+    regex: '(?<![\w.])print\('
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "printではなくos.Loggerを使う(本番ログに残らない出力は障害調査で役に立たない)"
+    severity: warning
+
+  no_nondeterministic_api:
+    name: "非決定性APIの直接使用禁止"
+    included: "iOS/Sources/.*\\.swift"
+    regex: '(?<![\w.])(Date\(\)|UUID\(\)|Date\.now)'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "Feature内では@Dependency(\\.date)/@Dependency(\\.uuid)を経由する(TestStoreで再現可能にするため)。ClientのliveValue実装のみdisableコメント可"
+    severity: warning
+
+  no_raw_task_in_feature:
+    name: "Reducer内の生Task禁止"
+    included: "iOS/Sources/.*\\.swift"
+    regex: '(?<![\w.])(Task\s*\{|Task\.detached|Task\s*\(priority)'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "副作用はEffect(.run)を経由する。生TaskはキャンセルされずTestStoreにも写らない"
+    severity: warning
+
+  no_dispatch_queue:
+    name: "DispatchQueue禁止"
+    regex: '(?<![\w.])DispatchQueue'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "async/await + MainActorに統一する"
+    severity: warning
+
+  no_unchecked_sendable:
+    name: "@unchecked Sendable禁止"
+    regex: '@unchecked\s+Sendable'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "@unchecked Sendableは並行性検査の放棄。どうしても必要なら理由コメント+swiftlint:disableを付ける"
+    severity: warning
+
+  no_shared_key_literal:
+    name: "@Sharedキーのリテラル禁止"
+    regex: '\.(appStorage|inMemory)\("'
+    message: "@Sharedのキーは文字列リテラルではなく定数を定義して使う。キーの重複定義とtypoを防ぐ"
+    severity: warning

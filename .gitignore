@@ -3,6 +3,8 @@
 App/TCATemplate.xcodeproj/
 App/.xcodegen/
 iOS/.build/
+TCAArchRules/.build/
+**/.swiftpm/
 **/DerivedData/
 **/xcuserdata/
 **/*.xcuserstate

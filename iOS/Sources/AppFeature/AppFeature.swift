@@ -1,7 +1,6 @@
 import ComposableArchitecture
 import CounterFeature
 import SecondTabFeature
-import SwiftUI
 
 @Reducer
 public struct AppFeature {
@@ -37,49 +36,5 @@ public struct AppFeature {
         Scope(state: \.secondTab, action: \.secondTab) {
             SecondTabFeature()
         }
-
-        Reduce { _, _ in .none }
-    }
-}
-
-public struct AppView: View {
-    @Bindable var store: StoreOf<AppFeature>
-
-    public init(store: StoreOf<AppFeature>) {
-        self.store = store
-    }
-
-    public var body: some View {
-        TabView(selection: $store.selectedTab) {
-            NavigationStack {
-                CounterView(
-                    store: store.scope(state: \.counter, action: \.counter)
-                )
-            }
-            .tabItem {
-                Label("Counter", systemImage: "plusminus.circle")
-            }
-            .tag(AppFeature.State.Tab.counter)
-
-            SecondTabView(
-                store: store.scope(state: \.secondTab, action: \.secondTab)
-            )
-            .tabItem {
-                Label("Navigate", systemImage: "arrow.right.square")
-            }
-            .tag(AppFeature.State.Tab.navigate)
-        }
-    }
-}
-
-public struct AppRootView: View {
-    public init() {}
-
-    public var body: some View {
-        AppView(
-            store: Store(initialState: AppFeature.State()) {
-                AppFeature()
-            }
-        )
     }
 }

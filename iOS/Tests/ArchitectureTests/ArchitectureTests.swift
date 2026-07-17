@@ -160,6 +160,11 @@ struct ArchitectureTests {
         LayerRules.modelsAreTCAFree(in: scope, config: config)
     }
 
+    @Test("R7e: Featureは永続化・OS・外部SDKへ直接アクセスしない")
+    func featureDirectSideEffects() {
+        LayerRules.featuresDoNotAccessDirectSideEffects(in: scope, config: config)
+    }
+
     // MARK: - R8: Singleton/Manager隔離
 
     @Test("R8a: Reducer/Viewは.sharedにアクセスしない")

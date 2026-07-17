@@ -86,6 +86,78 @@ public enum LayerRules {
             ) { $0.name == "ComposableArchitecture" }
     }
 
+    /// R7e: Feature層は永続化・OS・外部SDKの直接APIを参照しない。
+    ///
+    /// Featureは`@Shared`または`@Dependency`のClientを経由して副作用へアクセスする。
+    /// App層はcomposition rootとして許可し、Client層はliveValue実装の担当として許可する。
+    public static func featuresDoNotAccessDirectSideEffects(
+        in scope: HarmonizeScope,
+        config: TCAArchConfig,
+        baseline: [String] = [],
+        fileID: StaticString = #fileID,
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        column: UInt = #column
+    ) {
+        let forbiddenImports: Set<String> = [
+            "CloudKit",
+            "FirebaseAuth",
+            "FirebaseFirestore",
+            "GoogleMobileAds",
+            "GRDB",
+            "RealmSwift",
+            "RevenueCat",
+            "SQLiteData",
+            "StoreKit",
+            "SwiftData"
+        ]
+        let importRule = Rule(
+            id: "feature-no-side-effect-imports",
+            rationale: "Feature層は外部SDK/永続化モジュールを直接importせず、Client経由で利用する。"
+        )
+        let featureFiles = featureAndViewFiles(in: scope).filter { source in
+            guard let path = source.filePath?.path else { return false }
+            return !config.appDirs.contains { path.contains("/\($0)") }
+        }
+        let featureFilePaths = Set(featureFiles.compactMap { $0.filePath?.path })
+        scope.imports()
+            .filter { importDecl in
+                guard let path = importDecl.sourceCodeLocation.sourceFilePath?.path else { return false }
+                return featureFilePaths.contains(path)
+            }
+            .assertFalse(
+                message: importRule.rationale,
+                rule: importRule,
+                baseline: baseline,
+                fileID: fileID, file: file, line: line, column: column
+            ) { forbiddenImports.contains($0.name) }
+
+        let forbiddenTokens = [
+            "UserDefaults",
+            "FileManager.default",
+            "URLSession.shared",
+            "UIApplication.shared",
+            "UIDevice.current",
+            "WidgetCenter.shared",
+            "UNUserNotificationCenter.current",
+            "Purchases.shared",
+            "Firestore.firestore"
+        ]
+        let accessRule = Rule(
+            id: "feature-no-direct-side-effects",
+            rationale: "Feature層は永続化・OS・外部SDKの直接APIを使わず、@SharedまたはClientを経由する。"
+        )
+        featureFiles
+            .assertFalse(
+                message: accessRule.rationale,
+                rule: accessRule,
+                baseline: baseline,
+                fileID: fileID, file: file, line: line, column: column
+            ) { source in
+                forbiddenTokens.contains { source.source.contains($0) }
+            }
+    }
+
     /// R8a: Feature/View層のファイルは `.shared`(Singleton)へアクセスしない。
     ///
     /// システムAPI(UIApplication.shared等)も含めて全面禁止。副作用はClientのliveValue実装に隔離する。

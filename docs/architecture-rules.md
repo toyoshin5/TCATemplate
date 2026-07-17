@@ -70,6 +70,7 @@ TCATemplateの静的解析は2層で運用する。**同じ意図のルールを
   (`iOS/Sources/Persistence/`)+許可ファイル(DB導入時に `DatabaseClient.swift` 等を登録)のみ
 - R7b `design-system-tca-free`: `DesignSystem/` はTCA/Dependencies非依存(純データ+クロージャのみ受け取る)
 - R7c `models-tca-free`: `Models/` は `ComposableArchitecture` 非依存
+- R7e `feature-no-direct-side-effects`: Feature層は永続化・OS・外部SDKの直接API/importを使わず、`@Shared`またはClientを経由する
 
 ### R8: Singleton/Manager隔離(Harmonize)
 

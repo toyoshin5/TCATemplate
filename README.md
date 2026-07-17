@@ -13,7 +13,7 @@ The project layout follows the `try-swift-tokyo` style split:
 - **Counter tab** (`CounterFeature`) — a complete example of the enforced patterns: structured actions, an effect calling a `@DependencyClient` (`NumberFactClient`), and a `TestStore` test with dependency overrides
 - **Navigate tab** (`SecondTabFeature`) — a B → C → D drill-down navigation example using tree-based navigation
 - **Reducer tests for every feature** (Swift Testing + `TestStore`)
-- **Architecture tests** (`ArchitectureTests`) — 19 structural rules that fail the test suite on violation
+- **Architecture tests** (`ArchitectureTests`) — 20 structural rules that fail the test suite on violation
 - **SwiftLint config** — curated opt-in rules plus custom hygiene rules (no `print`, no raw `Task {}` in features, no nondeterministic `Date()`/`UUID()`, and more)
 
 ## Setup
@@ -49,6 +49,7 @@ The main rules (see `docs/architecture-rules.md` for the full list and rationale
 - Presentation goes through a `@Reducer enum Destination` (bare `@Presents` vars are not allowed)
 - Clients are named `*Client`, declare explicit `liveValue` / `testValue` / `previewValue`, and never import `ComposableArchitecture`
 - No singletons (`.shared`) and no direct `*Manager` access — everything is injected via `@Dependency`
+- Feature code does not access persistence, OS, or external SDK APIs directly — use `@Shared` or a Client
 - `Store(initialState:)` is created only in the composition root (`AppRootView`) and `#Preview`
 - Every reducer has a matching `<ReducerName>Tests` suite
 
